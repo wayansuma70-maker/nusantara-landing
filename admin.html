@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-ui="1.1">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -9,9 +9,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css?v=1.0">
+<link rel="stylesheet" href="css/admin.css?v=1.1">
 </head>
 <body>
+<div id="verWarn" hidden style="position:fixed;top:0;left:0;right:0;z-index:300;background:#BA1A1A;color:#fff;padding:12px 16px;font:600 14px/1.5 system-ui,sans-serif;text-align:center"></div>
 
 <!-- ===== MASUK ===== -->
 <section class="login" id="login">
@@ -46,6 +47,7 @@
     </nav>
     <div class="side-foot">
       <div class="status"><i></i> Landing page aktif</div>
+      <div class="ver" id="verInfo" aria-live="polite"></div>
       <a href="index.html" target="_blank" rel="noopener"><svg class="ic"><use href="#d-link"/></svg>Lihat halaman penjualan</a>
       <button id="btnLogout"><svg class="ic"><use href="#d-out"/></svg>Keluar</button>
     </div>
@@ -77,8 +79,17 @@
   <symbol id="d-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
 </defs></svg>
 
-<script src="js/config.js?v=1.0"></script>
-<script src="js/api.js?v=1.0"></script>
-<script src="js/admin.js?v=1.0"></script>
+<script src="js/config.js?v=1.1"></script>
+<script src="js/api.js?v=1.1"></script>
+<script src="js/admin.js?v=1.1"></script>
+<script>
+/* Pemeriksa versi: admin.html (ini) harus sepasang dengan js/admin.js. Jika berkas JS yang termuat lama/tidak sinkron → peringatan jelas. */
+addEventListener('load', function () {
+  var need = document.documentElement.getAttribute('data-ui'), got = window.__UI_VERSION;
+  if (got === need) return;
+  var b = document.getElementById('verWarn'); b.hidden = false;
+  b.innerHTML = '<b>Berkas dashboard tidak sinkron.</b> Halaman ini versi ' + need + ', tetapi <code>js/admin.js</code> yang termuat ' + (got ? 'versi ' + got : 'adalah versi lama') + '. Tekan <b>Ctrl+Shift+R</b> (Mac: Cmd+Shift+R). Jika tetap, pastikan <code>js/admin.js</code> terbaru sudah di-<i>push</i> ke GitHub.';
+});
+</script>
 </body>
 </html>
