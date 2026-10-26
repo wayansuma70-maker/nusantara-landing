@@ -15,6 +15,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
 }
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; scroll-padding-top: 84px; -webkit-text-size-adjust: 100%; }
 body { margin: 0; font: 400 16px/1.6 var(--font); color: var(--slate); background: var(--cream); overflow-x: hidden; }
 img, svg { max-width: 100%; display: block; }
@@ -330,6 +331,39 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .modal { align-items: end; padding: 0; } .modal-card { border-radius: 24px 24px 0 0; width: 100%; max-height: 92dvh; padding-bottom: calc(26px + var(--safe-b)); }
   .price-card { padding: 26px 20px; } .footer { padding-bottom: calc(100px + var(--safe-b)); }
 }
+
+/* ---------- Katalog produk ---------- */
+.kat { overflow: hidden; display: flex; flex-direction: column; }
+.kat-media { position: relative; aspect-ratio: 16/10; overflow: hidden; }
+.kat-media .slideshow { position: absolute; inset: 0; }
+.kat-label { position: absolute; z-index: 5; left: 14px; top: 14px; background: var(--coral); color: var(--slate); font-weight: 800; font-size: 12px; letter-spacing: .04em; padding: 6px 13px; border-radius: var(--pill); box-shadow: 0 6px 16px -4px rgba(232,128,94,.7); animation: tagPop 3s ease-in-out infinite; }
+.kat-off { position: absolute; z-index: 5; right: 14px; top: 14px; background: var(--slate); color: #fff; font-weight: 800; font-size: 12.5px; padding: 6px 12px; border-radius: var(--pill); }
+.kat-body { padding: 20px 22px 24px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.kat-tag { color: var(--coral-ink); font-weight: 700; font-size: 14px; }
+.kat-desc { color: var(--muted); font-size: 14.5px; }
+.ticks.mini { gap: 8px; margin: 2px 0; } .ticks.mini li { font-size: 14px; font-weight: 600; } .ticks.mini .ic { width: 22px; height: 22px; padding: 4px; background: var(--mint); box-shadow: none; }
+.kat-price { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-top: auto; padding-top: 6px; } .kat-price s { color: var(--muted); font-size: 15px; } .kat-price b { font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
+.kat-act { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; } .kat-act .btn:first-child { flex: 1; min-width: 150px; }
+.kat .quota { width: fit-content; font-size: 12.5px; }
+@keyframes tagPop { 50% { transform: scale(1.07) rotate(-1.5deg); } }
+.prod-note { background: var(--mint); color: #1f5a3d; font-weight: 600; }
+
+/* ---------- Video YouTube (muat saat diklik) ---------- */
+.vchips { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: -14px 0 28px; }
+.vchip { border: 0; background: #fff; box-shadow: inset 0 0 0 1.5px var(--line); border-radius: var(--pill); padding: 9px 20px; font-weight: 700; font-size: 14px; transition: transform .25s, background .2s; }
+.vchip:hover { transform: translateY(-2px); } .vchip.on { background: var(--slate); color: #fff; box-shadow: none; }
+.vid-grid { display: grid; gap: 22px; grid-template-columns: repeat(3, 1fr); }
+.vid-grid.vn1 { grid-template-columns: minmax(0, 860px); justify-content: center; } .vid-grid.vn2 { grid-template-columns: repeat(2, 1fr); }
+.vid { overflow: hidden; }
+.vid-box { position: relative; aspect-ratio: 16/9; background: linear-gradient(135deg, var(--slate), #2d4256); }
+.vid-box iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.vid-play { position: absolute; inset: 0; width: 100%; border: 0; padding: 0; background: transparent; overflow: hidden; cursor: pointer; }
+.vid-play img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s, filter .3s; } .vid-play:hover img { transform: scale(1.06); filter: brightness(.82); }
+.play-ic { position: absolute; left: 50%; top: 50%; width: 68px; height: 68px; margin: -34px 0 0 -34px; border-radius: 50%; background: var(--coral); color: var(--slate); display: grid; place-items: center; box-shadow: 0 10px 30px -6px rgba(232,128,94,.8); animation: glowPulse 2.6s ease-out infinite; transition: transform .3s cubic-bezier(.3,1.6,.5,1); }
+.play-ic svg { width: 30px; height: 30px; margin-left: 4px; } .vid-play:hover .play-ic { transform: scale(1.14); }
+.vid-info { padding: 18px 20px 22px; display: grid; gap: 8px; justify-items: start; } .vid-info p { color: var(--muted); font-size: 14.5px; }
+@media (max-width: 1020px) { .vid-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 720px) { .vid-grid, .vid-grid.vn2 { grid-template-columns: 1fr; } .play-ic { width: 58px; height: 58px; margin: -29px 0 0 -29px; } .kat-act .btn:first-child { min-width: 0; } }
 @media (hover: none) { .btn-cta:hover { transform: none; } .tilt { transform: none !important; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
