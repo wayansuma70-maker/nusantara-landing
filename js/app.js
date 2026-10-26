@@ -5,10 +5,11 @@
  * ============================================================ */
 (function () {
   'use strict';
+  window.__UI_VERSION = '1.1';
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var reduce = window.Effects ? Effects.reduce : false;
-  var DATA = null, MODE = 'live', CLEAN = [], BUY_LOC = 'halaman', GO_TIMER = 0, CACHE_KEY = 'nd_pub_v1';
+  var DATA = null, MODE = 'live', CLEAN = [], BUY_LOC = 'halaman', GO_TIMER = 0, CACHE_KEY = 'nd_pub_v1', CUR = null;   // CUR = produk katalog yang sedang dibeli (null = produk utama)
   var vid = (function () { try { var v = localStorage.getItem('nd_vid'); if (!v) { v = Math.random().toString(36).slice(2, 12) + Date.now().toString(36); localStorage.setItem('nd_vid', v); } return v; } catch (e) { return 'anon' + Math.random().toString(36).slice(2, 8); } })();
 
   /* ---------- util ---------- */
@@ -23,6 +24,8 @@
   function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   var toastT; function toast(m) { var t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('show'); }, 3200); }
   function P(k, d) { var v = DATA && DATA.produk && DATA.produk[k]; return v == null || v === '' ? (d || '') : v; }
+  function prodById(id) { return ((DATA && DATA.katalog) || []).filter(function (k) { return k.id === id; })[0] || null; }
+  var YT_ID = /^[A-Za-z0-9_-]{11}$/;
   function isLink(u) { return /^https?:\/\//i.test(u || '') && !/GANTI|XXXX/.test(u); }
 
   /* ---------- atribusi sumber trafik (UTM) ---------- */
@@ -92,11 +95,12 @@
 
   /* ---------- render ---------- */
   function head(eyebrow, title, sub) { return '<div class="sec-head reveal">' + (eyebrow ? '<div class="eyebrow">' + esc(eyebrow) + '</div>' : '') + '<h2 class="h2">' + esc(title) + '</h2>' + (sub ? '<p class="lead">' + esc(sub) + '</p>' : '') + '</div>'; }
-  function waUrl(nama, extra) {
-    var msg = (P('wa_pesan', 'Halo, saya tertarik dengan {produk}.')).replace(/\{produk\}/g, P('nama_produk')).replace(/\{nama\}/g, nama || '');
-    return 'https://wa.me/' + hp62(P('wa_cs')) + '?text=' + encodeURIComponent(msg + (extra || ''));
+  function waUrl(nama, prod) {
+    var msg = (P('wa_pesan', 'Halo, saya tertarik dengan {produk}.')).replace(/\{produk\}/g, (prod && prod.nama) || P('nama_produk')).replace(/\{nama\}/g, nama || '');
+    return 'https://wa.me/' + hp62(P('wa_cs')) + '?text=' + encodeURIComponent(msg);
   }
-  function payUrl() { return isLink(P('link_bayar')) ? P('link_bayar') : waUrl(''); }
+  /* Produk katalog tanpa link pembayaran → WhatsApp (jangan pernah memakai link produk utama untuk produk lain). */
+  function payUrl() { if (CUR) return isLink(CUR.link_bayar) ? CUR.link_bayar : waUrl('', CUR); return isLink(P('link_bayar')) ? P('link_bayar') : waUrl(''); }
   function saklar(k) { return !DATA.saklar || DATA.saklar[k] !== false; }
 
   function render() {
@@ -149,6 +153,33 @@
       Slideshow(el, sl, { interval: 3600, offset: i * 420 });
     });
 
+    /* katalog produk (dikelola dari dashboard → Produk & Video) */
+    var kat = d.katalog || [];
+    $('#katalog').hidden = !kat.length;
+    $('#katalogRoot').innerHTML = kat.length ? head('Katalog produk', P('katalog_judul', 'Pilihan Produk Digital Lainnya'), P('katalog_sub', '')) + '<div class="grid g3">' + kat.map(function (k, i) {
+      var off = k.harga_normal > k.harga_promo && k.harga_promo > 0 ? Math.round((1 - k.harga_promo / k.harga_normal) * 100) : 0;
+      return '<article class="card kat spot glow tilt reveal" style="--d:' + ((i % 3) * .08) + 's"><div class="kat-media"><div class="slideshow" data-kat="' + i + '"></div>' + (k.label ? '<span class="kat-label">' + esc(k.label) + '</span>' : '') + (off ? '<span class="kat-off">-' + off + '%</span>' : '') + '</div>'
+        + '<div class="kat-body"><h3 class="h3">' + esc(k.nama) + '</h3>' + (k.tagline ? '<p class="kat-tag">' + esc(k.tagline) + '</p>' : '') + (k.deskripsi ? '<p class="kat-desc">' + esc(k.deskripsi) + '</p>' : '')
+        + ((k.poin || []).length ? '<ul class="ticks mini">' + k.poin.map(function (t) { return '<li>' + icon('check') + '<span>' + esc(t) + '</span></li>'; }).join('') + '</ul>' : '')
+        + '<div class="kat-price">' + (off ? '<s>' + rp(k.harga_normal) + '</s>' : '') + '<b>' + (k.harga_promo > 0 ? rp(k.harga_promo) : 'Gratis') + '</b></div>' + (k.kuota > 0 ? '<span class="quota">Sisa kuota: ' + k.kuota + '</span>' : '')
+        + '<div class="kat-act"><button class="btn btn-cta" data-buy="katalog:' + esc(k.id) + '" type="button"><span class="btn-label">Beli Sekarang</span>' + icon('arrow') + '</button><a class="btn btn-ghost btn-sm" data-wa="katalog" data-prod="' + esc(k.id) + '" href="' + esc(waUrl('', k)) + '" target="_blank" rel="noopener">' + icon('wa') + ' Tanya</a></div></div></article>';
+    }).join('') + '</div>' : '';
+    $$('.kat [data-kat]').forEach(function (el) {
+      var i = +el.dataset.kat, k = kat[i], fb = [coverCard(i, 0, k.nama), coverCard(i, 1, k.nama)];
+      Slideshow(el, (k.gambar && k.gambar.length ? k.gambar.map(function (u, n) { return { src: u, fb: fb[n % 2], alt: k.nama }; }) : fb.map(function (u) { return { src: u, alt: k.nama }; })), { interval: 3400, offset: i * 500 });
+    });
+
+    /* video YouTube — facade: iframe baru dimuat saat diklik (hemat kuota & lebih privat) */
+    var vids = (d.video || []).filter(function (v) { return YT_ID.test(v.yt || ''); }), cats = [];
+    vids.forEach(function (v) { if (v.kategori && cats.indexOf(v.kategori) < 0) cats.push(v.kategori); });
+    $('#video').hidden = !vids.length;
+    $('#videoRoot').innerHTML = vids.length ? head('Video', P('video_judul', 'Tonton Cara Kerjanya'), P('video_sub', ''))
+      + (cats.length > 1 ? '<div class="vchips" role="group" aria-label="Filter video"><button class="vchip on" type="button" data-vcat="">Semua</button>' + cats.map(function (c) { return '<button class="vchip" type="button" data-vcat="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div>' : '')
+      + '<div class="vid-grid vn' + Math.min(vids.length, 3) + '">' + vids.map(function (v, i) {
+        return '<article class="card vid reveal" data-cat="' + esc(v.kategori || '') + '" style="--d:' + ((i % 3) * .08) + 's"><div class="vid-box" data-yt="' + esc(v.yt) + '" data-start="' + (parseInt(v.start, 10) || 0) + '" data-title="' + esc(v.judul) + '"><button class="vid-play" type="button" aria-label="Putar video: ' + esc(v.judul) + '"><img src="https://i.ytimg.com/vi/' + esc(v.yt) + '/hqdefault.jpg" alt="" loading="lazy" referrerpolicy="no-referrer"><span class="play-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span></button></div>'
+          + '<div class="vid-info">' + (v.kategori ? '<span class="tag">' + esc(v.kategori) + '</span>' : '') + '<h3 class="h3">' + esc(v.judul) + '</h3>' + (v.deskripsi ? '<p>' + esc(v.deskripsi) + '</p>' : '') + '</div></article>';
+      }).join('') + '</div>' : '';
+
     /* statistik */
     var st = d.statistik || [];
     $('#statRoot').innerHTML = st.length ? head('', p.statistik_judul) + '<div class="stats">' + st.map(function (s, i) { return '<div class="stat reveal" style="--d:' + (i * .08) + 's"><b data-count="' + esc(s.angka) + '">' + esc(s.angka) + '</b><span>' + esc(s.label) + '</span></div>'; }).join('') + '</div>' : '';
@@ -191,6 +222,7 @@
     $('#stickyWa').href = waUrl(''); $('#stickyWa').dataset.wa = 'sticky';
     $('#stickyNow').textContent = rp(p.harga_promo); $('#stickyOld').textContent = rp(p.harga_normal);
     var bt = $('#bfToggle'); bt.hidden = !saklar('SHOW_BUTTERFLY');
+    $$('[data-sec]').forEach(function (a) { var sc = document.getElementById(a.dataset.sec); a.hidden = !!(sc && sc.hidden); });
     afterRender();
   }
 
@@ -245,6 +277,17 @@
     openModal($('#tModal'), from);
   }
 
+  /* ---------- pemutar YouTube ---------- */
+  function resetVideo(b) { if (b.dataset.html) { b.innerHTML = b.dataset.html; b.classList.remove('playing'); } }
+  function playVideo(box) {
+    var yt = box.dataset.yt; if (!YT_ID.test(yt || '') || box.classList.contains('playing')) return;
+    $$('.vid-box.playing').forEach(resetVideo);                                        // satu video diputar pada satu waktu
+    box.dataset.html = box.innerHTML; var st = parseInt(box.dataset.start, 10) || 0;
+    var src = 'https://www.youtube-nocookie.com/embed/' + yt + '?autoplay=1&rel=0&modestbranding=1&playsinline=1' + (st ? '&start=' + st : '');
+    box.innerHTML = '<iframe src="' + src + '" title="' + esc(box.dataset.title) + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+    box.classList.add('playing');
+  }
+
   /* ---------- modal ---------- */
   var modalStack = [], lastFocus = null;
   function openModal(m, from) { lastFocus = from || document.activeElement; m.hidden = false; document.documentElement.style.overflow = 'hidden'; modalStack.push(m); setTimeout(function () { var f = $('input, .modal-x', m); if (f) f.focus({ preventScroll: true }); }, 60); }
@@ -257,18 +300,20 @@
   /* ---------- pelacakan & alur beli ---------- */
   function track(payload) {
     var a = attribution();
-    return Api.post('lead.track', Object.assign({ vid: vid, utm_source: a.utm_source, utm_medium: a.utm_medium, utm_campaign: a.utm_campaign }, payload), '', { keepalive: true, timeout: 8000 });
+    return Api.post('lead.track', Object.assign({ vid: vid, utm_source: a.utm_source, utm_medium: a.utm_medium, utm_campaign: a.utm_campaign, produk: (CUR && CUR.nama) || P('nama_produk') }, payload), '', { keepalive: true, timeout: 8000 });
   }
   function setFld(id, state) { var f = $(id).closest('.fld'); f.classList.toggle('good', state === true); f.classList.toggle('bad', state === false); }
-  function openBuy(loc) {
-    BUY_LOC = loc || 'halaman'; var dm = $('#drawer'); if (!dm.hidden) { dm.hidden = true; $('#burger').setAttribute('aria-expanded', 'false'); }
+  function openBuy(loc, prod) {
+    BUY_LOC = loc || 'halaman'; CUR = prod || null;
+    var pn = $('#leadProd'), nm = (CUR && CUR.nama) || P('nama_produk'), hg = CUR ? CUR.harga_promo : P('harga_promo');
+    pn.hidden = !nm; pn.textContent = nm ? 'Produk: ' + nm + (Number(hg) > 0 ? ' — ' + rp(hg) : '') : ''; var dm = $('#drawer'); if (!dm.hidden) { dm.hidden = true; $('#burger').setAttribute('aria-expanded', 'false'); }
     if (!saklar('SHOW_LEADFORM')) { track({ tombol: 'Beli Sekarang', lokasi: BUY_LOC, form: false }); showGo('pay', ''); return; }
     $('#leadStepForm').hidden = false; $('#leadStepGo').hidden = true; $('#leadErr').hidden = true;
     $('#leadForm').reset(); ['#fNama', '#fWa'].forEach(function (i) { $(i).closest('.fld').classList.remove('good', 'bad'); }); $('#okNama').hidden = $('#okWa').hidden = true;
     openModal($('#leadModal'));
   }
   function showGo(kind, nama) {
-    var url = kind === 'wa' ? waUrl(nama) : payUrl(), isWa = kind === 'wa' || url.indexOf('wa.me') > -1;
+    var url = kind === 'wa' ? waUrl(nama, CUR) : payUrl(), isWa = kind === 'wa' || url.indexOf('wa.me') > -1;
     $('#leadStepForm').hidden = true; $('#leadStepGo').hidden = false;
     $('#goTitle').textContent = nama ? 'Terima kasih, ' + nama.split(' ')[0] + '!' : 'Terima kasih!';
     $('#goText').textContent = isWa ? 'Sistem mengarahkan Anda ke WhatsApp CS dalam 3 detik…' : 'Sistem mengarahkan Anda ke halaman pembayaran dalam 3 detik…';
@@ -317,13 +362,16 @@
   function bindGlobal() {
     document.addEventListener('click', function (e) {
       var t = e.target, buy = t.closest('[data-buy]'), wa = t.closest('[data-wa]'), inf = t.closest('[data-info]'), cl = t.closest('[data-close]'), q = t.closest('.qa-q');
-      if (buy) { e.preventDefault(); if (modalStack.length && !modalStack.some(function (m) { return m.id === 'leadModal'; })) closeModal(); openBuy(buy.dataset.buy); return; }
-      if (wa) { track({ tombol: 'WhatsApp CS', lokasi: wa.dataset.wa, form: false }); return; }                    // biarkan tautan terbuka normal
+      if (buy) { e.preventDefault(); if (modalStack.length && !modalStack.some(function (m) { return m.id === 'leadModal'; })) closeModal(); var bv = buy.dataset.buy, pr = null; if (bv.indexOf('katalog:') === 0) { pr = prodById(bv.slice(8)); bv = 'katalog'; } openBuy(bv, pr); return; }
+      if (wa) { var wp = wa.dataset.prod ? prodById(wa.dataset.prod) : null; track({ tombol: 'WhatsApp CS', lokasi: wa.dataset.wa, form: false, produk: (wp && wp.nama) || P('nama_produk') }); return; }   // tautan tetap terbuka normal
+      var vp = t.closest('.vid-play'); if (vp) { playVideo(vp.closest('.vid-box')); return; }
+      var vc = t.closest('[data-vcat]'); if (vc) { $$('.vchip').forEach(function (b) { b.classList.toggle('on', b === vc); }); $$('.vid').forEach(function (c) { c.hidden = !!vc.dataset.vcat && c.dataset.cat !== vc.dataset.vcat; }); return; }
       if (inf) { e.preventDefault(); info(inf.dataset.info); return; }
       if (cl) { closeModal(cl.closest('.modal')); return; }
       if (q) { var box = q.closest('.qa'), o = !box.classList.contains('open'); $$('.qa.open').forEach(function (x) { x.classList.remove('open'); $('.qa-q', x).setAttribute('aria-expanded', 'false'); }); if (o) { box.classList.add('open'); q.setAttribute('aria-expanded', 'true'); } }
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+    document.addEventListener('error', function (e) { var im = e.target; if (im && im.tagName === 'IMG' && im.closest && im.closest('.vid-play')) im.style.display = 'none'; }, true);   // thumbnail YouTube gagal → latar gradien
     $('#leadForm').addEventListener('submit', function (e) { e.preventDefault(); proceed('pay'); });
     $('#btnWa').addEventListener('click', function () { proceed('wa'); });
     $('#btnSkip').addEventListener('click', function () { proceed('skip'); });
@@ -335,7 +383,7 @@
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(function (es) { $('#stickyBar').classList.toggle('show', !es[0].isIntersecting); $('#stickyBar').hidden = false; }, { threshold: 0 }).observe($('.hero'));
       var links = $$('.nav-links a');
-      ['masalah', 'isi', 'ulasan', 'harga', 'faq'].forEach(function (id) {
+      ['masalah', 'isi', 'katalog', 'video', 'ulasan', 'harga', 'faq'].forEach(function (id) {
         var sec = document.getElementById(id); if (!sec) return;
         new IntersectionObserver(function (es) { if (es[0].isIntersecting) links.forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === '#' + id); }); }, { rootMargin: '-45% 0px -50% 0px' }).observe(sec);
       });

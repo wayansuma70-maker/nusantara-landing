@@ -37,7 +37,11 @@ window.DEMO_DATA = {
   "tiktok": "",
   "email_cs": "",
   "kebijakan_privasi": "Kami hanya menyimpan nama dan nomor WhatsApp yang Anda isi untuk keperluan konfirmasi pesanan dan informasi produk. Data tidak dijual atau dibagikan ke pihak lain. Anda dapat meminta penghapusan data kapan saja lewat WhatsApp CS.",
-  "syarat_ketentuan": "Produk digital bersifat tidak dapat dikirim fisik. Akses diberikan setelah pembayaran terkonfirmasi. Garansi uang kembali berlaku 7 hari sesuai ketentuan yang disampaikan CS."
+  "syarat_ketentuan": "Produk digital bersifat tidak dapat dikirim fisik. Akses diberikan setelah pembayaran terkonfirmasi. Garansi uang kembali berlaku 7 hari sesuai ketentuan yang disampaikan CS.",
+  "katalog_judul": "Pilihan Produk Digital Lainnya",
+  "katalog_sub": "Pilih paket yang paling sesuai dengan kebutuhan Anda. Semua produk dikirim digital dan bisa diakses langsung setelah pembayaran.",
+  "video_judul": "Tonton Cara Kerjanya",
+  "video_sub": "Video tutorial dan konten singkat agar Anda tahu persis apa yang akan didapat."
  },
  "saklar": {
   "SHOW_TESTIMONI": true,
@@ -143,6 +147,60 @@ window.DEMO_DATA = {
    "gambar": []
   }
  ],
+ "katalog": [
+  {
+   "id": "PRD-CONTOH1",
+   "nama": "E-book Starter Kreator",
+   "tagline": "Mulai jualan digital dalam 7 hari",
+   "deskripsi": "Panduan langkah demi langkah untuk menyiapkan produk pertama, halaman jualan, dan alur pembayaran.",
+   "poin": [
+    "Panduan PDF 80 halaman",
+    "Checklist peluncuran",
+    "Template penawaran"
+   ],
+   "harga_normal": 99000,
+   "harga_promo": 49000,
+   "gambar": [],
+   "link_bayar": "",
+   "label": "Terlaris",
+   "kuota": 50
+  },
+  {
+   "id": "PRD-CONTOH2",
+   "nama": "Template Pack Landing Page",
+   "tagline": "Siap pakai, tinggal ganti teks",
+   "deskripsi": "Kumpulan template halaman penjualan, caption iklan, dan skrip WhatsApp yang sudah tertata.",
+   "poin": [
+    "10 template halaman",
+    "Caption iklan siap salin",
+    "Skrip follow-up WhatsApp"
+   ],
+   "harga_normal": 199000,
+   "harga_promo": 99000,
+   "gambar": [],
+   "link_bayar": "",
+   "label": "Hemat 50%",
+   "kuota": 30
+  },
+  {
+   "id": "PRD-CONTOH3",
+   "nama": "Kelas Video Otomasi Jualan",
+   "tagline": "Belajar sambil praktik",
+   "deskripsi": "Rekaman kelas lengkap membangun sistem lead, CRM, dan notifikasi dengan Google Workspace.",
+   "poin": [
+    "12 video tutorial",
+    "Akses komunitas",
+    "Update materi gratis"
+   ],
+   "harga_normal": 349000,
+   "harga_promo": 199000,
+   "gambar": [],
+   "link_bayar": "",
+   "label": "Baru",
+   "kuota": 0
+  }
+ ],
+ "video": [],
  "statistik": [
   {
    "urutan": 1,
